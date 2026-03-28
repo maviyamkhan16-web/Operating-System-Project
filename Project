@@ -1,0 +1,106 @@
+#include <stdio.h>
+
+#define MAX_TASKS 5
+#define SIMULATION_TIME 20
+
+typedef struct {
+    int id;
+    int execution_time;
+    int period;
+    int deadline;
+    int remaining_time;
+    int next_release;
+} Task;
+
+Task tasks[MAX_TASKS];
+int n;
+
+// Initialize tasks
+void init_tasks() {
+    n = 3;
+
+    tasks[0] = (Task){1, 1, 4, 4, 0, 0};
+    tasks[1] = (Task){2, 2, 5, 5, 0, 0};
+    tasks[2] = (Task){3, 1, 7, 7, 0, 0};
+}
+
+// Select task using EDF
+int select_edf(int current_time) {
+    int idx = -1;
+    int min_deadline = 100000;
+
+    for (int i = 0; i < n; i++) {
+        if (tasks[i].remaining_time > 0) {
+            int abs_deadline = tasks[i].next_release - tasks[i].period + tasks[i].deadline;
+            if (abs_deadline < min_deadline) {
+                min_deadline = abs_deadline;
+                idx = i;
+            }
+        }
+    }
+    return idx;
+}
+
+// Select task using RMS
+int select_rms() {
+    int idx = -1;
+    int min_period = 100000;
+
+    for (int i = 0; i < n; i++) {
+        if (tasks[i].remaining_time > 0) {
+            if (tasks[i].period < min_period) {
+                min_period = tasks[i].period;
+                idx = i;
+            }
+        }
+    }
+    return idx;
+}
+
+// Simulation function
+void simulate(int useEDF) {
+    printf("\n=============================\n");
+    if (useEDF)
+        printf("   EDF Scheduling\n");
+    else
+        printf("   RMS Scheduling\n");
+    printf("=============================\n");
+
+    for (int t = 0; t < SIMULATION_TIME; t++) {
+
+        // Release tasks
+        for (int i = 0; i < n; i++) {
+            if (t == tasks[i].next_release) {
+                tasks[i].remaining_time = tasks[i].execution_time;
+                tasks[i].next_release += tasks[i].period;
+            }
+        }
+
+        int idx;
+        if (useEDF)
+            idx = select_edf(t);
+        else
+            idx = select_rms();
+
+        if (idx != -1) {
+            printf("Time %2d -> Task %d running\n", t, tasks[idx].id);
+            tasks[idx].remaining_time--;
+        } else {
+            printf("Time %2d -> Idle\n", t);
+        }
+    }
+}
+
+// Main function
+int main() {
+
+    // EDF
+    init_tasks();
+    simulate(1);
+
+    // RMS
+    init_tasks();
+    simulate(0);
+
+    return 0;
+}
